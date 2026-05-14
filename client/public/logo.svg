@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 150">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,700&amp;family=Poppins:wght@600&amp;display=swap');
+      .logo-text {
+        font-family: 'Playfair Display', serif;
+        font-style: italic;
+        font-weight: 700;
+        font-size: 56px;
+        fill: #000000;
+      }
+      .logo-sub {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 16px;
+        fill: #2563eb; /* Blue accent */
+        letter-spacing: 6px;
+        text-transform: uppercase;
+      }
+    </style>
+  </defs>
+  <text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" class="logo-text">Sneaker Care Dept.</text>
+  <text x="50%" y="75%" dominant-baseline="middle" text-anchor="middle" class="logo-sub">Johannesburg</text>
+</svg>
