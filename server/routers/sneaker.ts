@@ -98,31 +98,59 @@ export const sneakerRouter = router({
           console.error("Failed to send WhatsApp notification:", error);
         }
 
-        // Send to Make.com Webhook
-        try {
-          const callType = input.specialRequests?.includes("OUTCALL") ? "OUT-CALL" : "IN-CALL";
-          await fetch('https://hook.eu2.make.com/wd9rpfpr1hxyw7wvxp4r6ogt40l10794', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              bookingId,
-              serviceName: service.name,
-              customerName: input.customerName,
-              customerEmail: input.customerEmail,
-              customerPhone: input.customerPhone,
-              bookingDate: input.bookingDate,
-              bookingTime: input.bookingTime,
-              callType,
-              specialRequests: input.specialRequests || ''
-            })
-          });
-        } catch (webhookError) {
-          console.error("Failed to send webhook:", webhookError);
-        }
-
         return { success: true, bookingId };
+      }),
+
+    sendWebhook: publicProcedure
+      .input(
+        z.object({
+          bookingIds: z.array(z.number()).min(1),
+          services: z.array(z.object({
+            id: z.number(),
+            name: z.string(),
+            price: z.number(),
+          })).min(1),
+          customerName: z.string().min(2, "Name must be at least 2 characters"),
+          customerEmail: z.string().email("Invalid email address"),
+          customerPhone: z.string().regex(phoneRegex, "Invalid phone number"),
+          bookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (YYYY-MM-DD)"),
+          bookingTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format (HH:MM)"),
+          callType: z.enum(["incall", "outcall"]),
+          specialRequests: z.string().optional(),
+          totalAmount: z.number().nonnegative(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const callType = input.callType === "outcall" ? "OUT-CALL" : "IN-CALL";
+
+        await fetch('https://hook.eu2.make.com/wd9rpfpr1hxyw7wvxp4r6ogt40l10794', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            bookingIds: input.bookingIds,
+            services: input.services.map((service) => ({
+              id: service.id,
+              name: service.name,
+              price: service.price,
+              priceFormatted: `R ${(service.price / 100).toFixed(2)}`,
+            })),
+            serviceNames: input.services.map((service) => service.name),
+            customerName: input.customerName,
+            customerEmail: input.customerEmail,
+            customerPhone: input.customerPhone,
+            bookingDate: input.bookingDate,
+            bookingTime: input.bookingTime,
+            callType,
+            specialRequests: input.specialRequests || '',
+            totalAmount: input.totalAmount,
+            totalAmountFormatted: `R ${(input.totalAmount / 100).toFixed(2)}`,
+            submittedAt: new Date().toISOString(),
+          })
+        });
+
+        return { success: true };
       }),
 
     getById: publicProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {

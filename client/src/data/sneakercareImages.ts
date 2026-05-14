@@ -25,6 +25,7 @@ import img24 from '@/assets/sneakercare-uploads/24-homepage-services-deep-clean.
 import img25 from '@/assets/sneakercare-uploads/25-homepage-services-intense-deep-clean.webp';
 import img26 from '@/assets/sneakercare-uploads/26-homepage-services-suede-nubuck-maintenance.webp';
 import img27 from '@/assets/sneakercare-uploads/27-rotation-refresh-plan-offer-poster.webp';
+import img28 from '@/assets/sneakercare-uploads/28-products-page-sole-unyellowing.webp';
 
 export type SneakercareImage = {
   id: string;
@@ -65,6 +66,7 @@ export const productOfferImages: SneakercareImage[] = [
   { id: 'product-shampoo', src: img16, alt: 'Sneaker Shampoo offer poster', caption: 'Sneaker Shampoo', category: 'product-offer', matchedItem: 'Sneaker Shampoo 250ml' },
   { id: 'product-protector', src: img18, alt: 'Sneaker Protector offer poster', caption: 'Sneaker Protector', category: 'product-offer', matchedItem: 'Sneaker Protector 200ml' },
   { id: 'product-wipes', src: img20, alt: 'Sneaker Wipes offer poster', caption: 'Sneaker Wipes', category: 'product-offer', matchedItem: 'Sneaker Wipes' },
+  { id: 'product-sole-unyellowing', src: img28, alt: 'Sole Unyellowing offer poster', caption: 'Sole Unyellowing', category: 'product-offer', matchedItem: 'Sole Unyellowing' },
 ];
 
 export const additionalServiceOfferImages: SneakercareImage[] = [

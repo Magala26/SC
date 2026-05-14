@@ -38,58 +38,14 @@ export default function Products() {
       ]
     },
     {
-      name: 'Sneaker Protector 200ml',
-      price: 'R150',
-      hook: 'Stains and water don\'t stand a chance.',
-      copy: 'A stain and water repellant that creates an invisible barrier over your sneaker\'s surface. Apply before you step out — not after something goes wrong.',
+      name: 'Sole Unyellowing',
+      price: 'R400 per pair',
+      hook: 'Bring yellowed soles back to icy.',
+      copy: 'Designed to restore yellowed soles to their original icy look and keep your kicks looking fresh. A focused sole treatment for pairs that need their clean finish back.',
       useCases: [
-        'Pre-wear protection on new pairs',
-        'Barrier coat after professional cleaning',
-        'Works on leather, suede, and canvas'
-      ]
-    },
-    {
-      name: 'Sneaker Detailer 100ml',
-      price: 'R90',
-      hook: 'Finish it like a professional would.',
-      copy: 'A temporary sneaker detailer in Black and White that restores surface appearance fast between cleans. One application, clean result.',
-      useCases: [
-        'Touching up scuffs before an event',
-        'Sole edge detailing',
-        'Quick restoration on black or white colourways'
-      ]
-    },
-    {
-      name: 'Suede Sponge Buffer',
-      price: 'R70',
-      hook: 'Suede forgives nothing — unless you have the right tool.',
-      copy: 'Designed specifically for suede, this buffer lifts dirt and restores the nap without damaging the material. The tool most suede owners don\'t know they\'re missing.',
-      useCases: [
-        'Regular nap maintenance',
-        'Removing dry dirt from suede surfaces',
-        'Keeping texture looking fresh between wears'
-      ]
-    },
-    {
-      name: 'Suede & Nubuck Cleaning Brush',
-      price: 'R120',
-      hook: 'The brush that knows the difference.',
-      copy: 'Dual-purpose brush engineered for suede and nubuck — firm enough to clean, precise enough not to damage. Non-negotiable if you own suede.',
-      useCases: [
-        'Weekly suede brushing routine',
-        'Directional nap grooming',
-        'Safe use on nubuck panels'
-      ]
-    },
-    {
-      name: 'Sneaker Trees',
-      price: 'R80',
-      hook: 'Shape is everything. Don\'t lose it.',
-      copy: 'Structured sneaker trees that maintain the form of your pair during storage — preventing creasing, collapsing, and toe-box deformation over time.',
-      useCases: [
-        'Overnight shape retention after wear',
-        'Long-term collection storage',
-        'Crease prevention on premium pairs'
+        'Restoring yellowed soles',
+        'Reviving aged pairs with an icy finish',
+        'Freshening the look of white and translucent soles'
       ]
     },
     {

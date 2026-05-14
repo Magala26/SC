@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 
 const BOOKING_INTERVAL_MINUTES = 30;
@@ -36,9 +37,10 @@ const SERVICES = [
 
 export default function Booking() {
   const createBooking = trpc.sneaker.bookings.create.useMutation();
+  const sendBookingWebhook = trpc.sneaker.bookings.sendWebhook.useMutation();
 
   const [formData, setFormData] = useState({
-    selectedService: '' as string,
+    selectedServices: [] as string[],
     customerName: '',
     customerEmail: '',
     customerPhone: '',
@@ -50,6 +52,15 @@ export default function Booking() {
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string>('');
+  const [showThankYouPopup, setShowThankYouPopup] = useState(false);
+
+  const selectedServices = useMemo(() => {
+    return SERVICES.filter((service) => formData.selectedServices.includes(String(service.id)));
+  }, [formData.selectedServices]);
+
+  const selectedServicesTotal = useMemo(() => {
+    return selectedServices.reduce((total, service) => total + service.price, 0);
+  }, [selectedServices]);
 
   // Generate available time slots based on strict booking rules
   const availableTimeSlots = useMemo(() => {
@@ -107,8 +118,16 @@ export default function Booking() {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleServiceChange = (value: string) => {
-    setFormData({ ...formData, selectedService: value });
+  const handleServiceToggle = (serviceId: string) => {
+    setFormData((current) => {
+      const isSelected = current.selectedServices.includes(serviceId);
+      return {
+        ...current,
+        selectedServices: isSelected
+          ? current.selectedServices.filter((id) => id !== serviceId)
+          : [...current.selectedServices, serviceId],
+      };
+    });
   };
 
   const handleCallTypeChange = (value: string) => {
@@ -118,8 +137,8 @@ export default function Booking() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.selectedService) {
-      toast.error('Please select a service');
+    if (selectedServices.length === 0) {
+      toast.error('Please select at least one service');
       return;
     }
 
@@ -148,34 +167,48 @@ export default function Booking() {
     }
 
     try {
-      const serviceId = Number(formData.selectedService);
-      const service = SERVICES.find(s => s.id === serviceId);
-      
-      if (!service) {
-        toast.error('Selected service not found');
-        return;
+      const selectedServiceNames = selectedServices.map((service) => service.name).join(', ');
+      const specialRequests = `${formData.callType.toUpperCase()} BOOKING. SERVICES SELECTED: ${selectedServiceNames}. ${formData.specialRequests || ''}`.trim();
+      const bookingIds: number[] = [];
+
+      for (const service of selectedServices) {
+        const result = await createBooking.mutateAsync({
+          serviceId: service.id,
+          customerName: formData.customerName,
+          customerEmail: formData.customerEmail,
+          customerPhone: formData.customerPhone,
+          bookingDate: formData.bookingDate,
+          bookingTime: formData.bookingTime,
+          specialRequests,
+        });
+
+        bookingIds.push(result.bookingId);
       }
 
-      const result = await createBooking.mutateAsync({
-        serviceId: serviceId,
+      await sendBookingWebhook.mutateAsync({
+        bookingIds,
+        services: selectedServices,
         customerName: formData.customerName,
         customerEmail: formData.customerEmail,
         customerPhone: formData.customerPhone,
         bookingDate: formData.bookingDate,
         bookingTime: formData.bookingTime,
-        specialRequests: `${formData.callType.toUpperCase()} BOOKING. ${formData.specialRequests || ''}`,
+        callType: formData.callType,
+        specialRequests: formData.specialRequests,
+        totalAmount: selectedServicesTotal,
       });
 
-      toast.success('Booking created successfully! Redirecting to checkout...');
+      setShowThankYouPopup(true);
+      toast.success('Thank you, your booking went through!');
       
       // Construct WhatsApp message for the user to send as well
-      const whatsappMsg = `Hi Sneaker Care Department, I've just made a booking!\n\nService: ${service.name}\nDate: ${formData.bookingDate}\nTime: ${formData.bookingTime}\nType: ${formData.callType.toUpperCase()}\nName: ${formData.customerName}`;
+      const whatsappMsg = `Hi Sneaker Care Department, I've just made a booking!\n\nServices: ${selectedServiceNames}\nDate: ${formData.bookingDate}\nTime: ${formData.bookingTime}\nType: ${formData.callType.toUpperCase()}\nName: ${formData.customerName}`;
       const whatsappUrl = `https://wa.me/27665884466?text=${encodeURIComponent(whatsappMsg)}`;
 
       setTimeout(() => {
         window.open(whatsappUrl, '_blank');
-        window.location.href = `/checkout?bookingIds=${result.bookingId}`;
-      }, 1500);
+        window.location.href = `/checkout?bookingIds=${bookingIds.join(',')}`;
+      }, 2200);
     } catch (error: any) {
       toast.error(error.message || 'Failed to create booking');
     }
@@ -189,8 +222,20 @@ export default function Booking() {
   const maxDate = new Date();
   maxDate.setDate(maxDate.getDate() + 30);
 
+  const isSubmitting = createBooking.isPending || sendBookingWebhook.isPending;
+
   return (
     <Layout>
+      {showThankYouPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="card-modern max-w-md w-full bg-white text-center p-8 shadow-2xl border-2 border-blue-100">
+            <div className="text-6xl text-accent mb-4" aria-hidden="true">♥</div>
+            <h2 className="text-3xl font-bold uppercase text-foreground mb-3">Thank You</h2>
+            <p className="text-lg font-semibold text-gray-700">Your booking went through.</p>
+          </div>
+        </div>
+      )}
+
       <section className="bg-background py-12 md:py-16">
         <div className="container">
           <h1 className="text-4xl md:text-5xl font-bold uppercase mb-4">Book Your Service</h1>
@@ -205,19 +250,43 @@ export default function Booking() {
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Service Selection */}
             <div>
-              <label className="block font-bold uppercase mb-3 text-foreground">Select Service *</label>
-              <Select value={formData.selectedService} onValueChange={handleServiceChange}>
-                <SelectTrigger className="w-full border-2 border-foreground h-12 font-bold text-foreground bg-white">
-                  <SelectValue placeholder="-- Choose a service --" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SERVICES.map((service) => (
-                    <SelectItem key={service.id} value={String(service.id)}>
-                      {service.name} - R {(service.price / 100).toFixed(2)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <label className="block font-bold uppercase mb-3 text-foreground">Select Services *</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {SERVICES.map((service) => {
+                  const serviceId = String(service.id);
+                  const isSelected = formData.selectedServices.includes(serviceId);
+
+                  return (
+                    <div
+                      key={service.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleServiceToggle(serviceId)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          handleServiceToggle(serviceId);
+                        }
+                      }}
+                      className={`flex cursor-pointer items-center gap-3 text-left border-2 rounded-lg p-4 transition-all bg-white ${
+                        isSelected ? 'border-accent shadow-md' : 'border-foreground hover:border-accent'
+                      }`}
+                    >
+                      <Checkbox checked={isSelected} className="pointer-events-none" />
+                      <span className="flex-1">
+                        <span className="block font-bold text-foreground">{service.name}</span>
+                        <span className="block text-sm font-semibold text-gray-500">R {(service.price / 100).toFixed(2)}</span>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              {selectedServices.length > 0 && (
+                <div className="mt-4 rounded-lg bg-blue-50 p-4 font-bold text-foreground">
+                  Selected: {selectedServices.map((service) => service.name).join(', ')}
+                  <span className="block text-accent mt-1">Total: R {(selectedServicesTotal / 100).toFixed(2)}</span>
+                </div>
+              )}
             </div>
 
             {/* Booking Type Selection */}
@@ -335,10 +404,10 @@ export default function Booking() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={createBooking.isPending}
+              disabled={isSubmitting}
               className="btn-primary w-full font-bold uppercase disabled:opacity-50"
             >
-              {createBooking.isPending ? 'Processing...' : 'Confirm Booking'}
+              {isSubmitting ? 'Processing...' : 'Confirm Booking'}
             </button>
           </form>
         </div>
